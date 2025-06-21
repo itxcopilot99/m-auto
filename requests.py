@@ -322,9 +322,10 @@ async def handle_custom_speed_message(message, state, bot, get_tokens, get_curre
     try:
         speed = float(message.text.strip())
         if not (0.01 <= speed <= 30):
-            await message.reply("Please enter a value between 0.01 and 30 seconds.")
-            return
-        state.pop("awaiting_custom_speed")
+            await message.reply("Please enter a value between 0.01 and 30 seconds. Send /cancel to abort.")
+            return  # Stay in awaiting mode
+        # Clear custom speed state after valid input
+        state.pop("awaiting_custom_speed", None)
         mode = state.pop("pending_speed_mode", None)
         if mode == "current":
             tokens = get_tokens(user_id)
@@ -378,8 +379,8 @@ async def handle_custom_speed_message(message, state, bot, get_tokens, get_curre
             await message.reply("Speed selection not allowed here.")
         return
     except Exception:
-        await message.reply("Invalid speed value. Please send a number like 1.5 for 1.5 seconds.")
-        return
+        await message.reply("Invalid speed value. Please send a number like 1.5 for 1.5 seconds. Send /cancel to abort.")
+        return  # Stay in awaiting mode
 
 async def handle_requests_callback(
     callback_query, state, bot, user_id, get_current_account, get_tokens, set_current_account, start_markup
@@ -427,7 +428,7 @@ async def handle_requests_callback(
 
     if data == "speed_custom":
         state["awaiting_custom_speed"] = True
-        await edit("Please send your custom speed in seconds (e.g., 2.0 for 2 seconds between requests):")
+        await edit("Please send your custom speed in seconds (e.g., 2.0 for 2 seconds between requests):\nYou can /cancel to abort.", None)
         return True
 
     if data == "requests_cancel":
